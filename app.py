@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, APIRouter
+from fastapi import FastAPI, Depends, APIRouter, BackgroundTasks
 from models import User
 from sqlalchemy.orm import Session
 from passlib.hash import bcrypt
@@ -15,9 +15,8 @@ from fastapi import Query
 import post
 import user
 from fastapi.middleware.cors import CORSMiddleware
-
-
-
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 
 
 
@@ -38,6 +37,13 @@ SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+# ---------------------------------
+# :: Middlewares
+# ---------------------------------
+
+# ---------------------------------
+# :: CORSMiddleware
+# ---------------------------------
 
 origins = [
     "http://localhost:8001",
@@ -51,7 +57,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------------------------------
+# :: TrustedHostMiddleware
+# ---------------------------------
 
+app.add_middleware(
+    TrustedHostMiddleware, allowed_hosts=["127.0.0.1"]
+)
+
+
+# ---------------------------------
+# :: HTTPSRedirectMiddleware
+# ---------------------------------
+
+# app.add_middleware(HTTPSRedirectMiddleware) # Redirects HTTP to HTTPS
+
+
+
+# ---------------------------------
+# :: PostgreSQL User Login
+# ---------------------------------
 
 @postgresql_router.post("/user/login")
 async def check_user_login(username: str, password: str, db: Session = Depends(get_db)):
@@ -88,6 +113,11 @@ async def check_user_login(username: str, password: str, db: Session = Depends(g
         raise HTTPException(detail="Wrong credentials", status_code=404)
 
 
+# ---------------------------------
+# :: PostgreSQL User Registration
+# ---------------------------------
+
+
 @postgresql_router.post("/user/register")
 async def register_user(
     full_name: str,
@@ -121,12 +151,20 @@ app.include_router(
 
 # --------------------------------- MongoDB ---------------------------------
 
+# ---------------------------------
+# :: MongoDB Operations
+# ---------------------------------
+
 
 client = AsyncIOMotorClient("mongodb://localhost:27017")
 db = client["Fast_api_db"]
 user_collection = db["user_crud"]
 post_collection = db["post_crud"]
 
+
+# ---------------------------------
+# :: MongoDB Pydantic Models
+# ---------------------------------
 
 class UserCreate(BaseModel):
     name: str
@@ -140,12 +178,22 @@ class PostCreate(BaseModel):
     content: str
     user_id: str
     created_at: datetime.datetime = datetime.datetime.now()
+    
+
+# ---------------------------------
+# :: MongoDB Connection Test
+# ---------------------------------
 
 
 @mongodb_router.get("/test_connection")
 async def test_connection():
     collections = await db.list_collection_names()
     return collections
+    
+
+# ---------------------------------
+# :: MongoDB Create Collection
+# ---------------------------------
 
 
 @mongodb_router.post("/create_collection")
@@ -159,6 +207,11 @@ async def create_collection(CollectionName: str = None):
         )
     except Exception as e:
         raise HTTPException(detail=str(e), status_code=500)
+    
+
+# ---------------------------------
+# :: MongoDB Drop Collection
+# ---------------------------------
 
 
 @mongodb_router.post("/drop_collection")
@@ -177,6 +230,11 @@ async def drop_collection(CollectionName: str = None):
     except Exception as e:
         raise HTTPException(detail=str(e), status_code=500)
 
+    
+# ---------------------------------
+# :: MongoDB User Create
+# ---------------------------------
+
 
 @mongodb_router.post("/user/create", response_model=UserCreate)
 async def create_user(name: str, email: str):
@@ -187,6 +245,9 @@ async def create_user(name: str, email: str):
     except Exception as e:
         raise HTTPException(detail=str(e), status_code=400)
 
+# ---------------------------------
+# :: MongoDB User Get
+# ---------------------------------
 
 @mongodb_router.get("/user/get")
 async def get_user(name: str = "Noman"):
@@ -202,6 +263,11 @@ async def get_user(name: str = "Noman"):
             raise HTTPException(detail="User not found", status_code=404)
     except Exception as e:
         raise HTTPException(detail=str(e), status_code=500)
+
+
+# ---------------------------------
+# :: MongoDB User Get All
+# ---------------------------------
 
 
 @mongodb_router.get("/user/get_all")
@@ -221,7 +287,9 @@ async def get_all_user(
         return users
     except Exception as e:
         raise HTTPException(detail=str(e), status_code=500)
-
+    
+    
+# --------------------------------- Routes ---------------------------------
 
 app.include_router(user.app, prefix="/api/user", tags=["User"])
 app.include_router(post.app, prefix="/api/post", tags=["Post"])

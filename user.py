@@ -7,15 +7,25 @@ from jose import jwt
 from passlib.hash import bcrypt
 
 
+# ---------------------------------
+# :: APIRouter
+# ---------------------------------
+
 app = APIRouter()
 
-
+# ---------------------------------
+# :: Pydentics Models
+# ---------------------------------
 class UserCreate(BaseModel):
     name: str
     email: str
     password: str
     created_at: datetime.datetime = datetime.datetime.now()
-
+    
+    
+# ---------------------------------
+# :: Create User
+# ---------------------------------
 
 @app.post("/create_user")
 async def create_user(
@@ -38,7 +48,11 @@ async def create_user(
         return {"message": "User Created", "user": name}
     except Exception as e:
         raise HTTPException(detail=str(e), status_code=500)
+    
 
+# ---------------------------------
+# :: Login User
+# ---------------------------------
 
 @app.post("/login_user")
 async def login_user(username: str, password: str):

@@ -12,9 +12,17 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import pytz
 
 
+# ---------------------------------
+# :: APIRouter
+# ---------------------------------
+
 app = APIRouter()
 security = HTTPBearer()
 
+
+# ---------------------------------
+# :: Pydantic Models
+# ---------------------------------
 
 class UserCreate(BaseModel):
     name: str
@@ -28,6 +36,11 @@ class PostCreate(BaseModel):
     content: str
     user_id: str
     created_at: datetime.datetime = datetime.datetime.now()
+    
+    
+# ---------------------------------
+# :: Create Post
+# ---------------------------------
 
 
 @app.post("/create", response_model=PostCreate)
@@ -47,6 +60,9 @@ async def create_post(
         print(e)
         raise HTTPException(detail=str(e), status_code=400)
 
+# -------------------------------------------
+# :: Get All Post By Specific User
+# -------------------------------------------
 
 @app.get("/get_all_posts_by_specific_user")
 async def get_all_post(token: HTTPAuthorizationCredentials = Depends(security)):

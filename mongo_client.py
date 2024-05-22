@@ -1,5 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 
+# ---------------------------------
+# :: MongoDB Connection
+# ---------------------------------
 
 # client = AsyncIOMotorClient("mongodb://localhost:27017")
 client = AsyncIOMotorClient(
